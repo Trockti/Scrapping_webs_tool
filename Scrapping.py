@@ -6,6 +6,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import urljoin, urlparse
 import time
 
+input = input("Por favor, introduzca las URL's de las que desea extraer los datos: ")
+print(input)
+urls_list = input.split(" ")
+print(urls_list)
 # Clear the file content before starting
 with open("RAG_TXT.txt", 'w') as file:
     file.write("")
@@ -65,9 +69,9 @@ def explore_urls(base_url, current_url):
             # Refresh the list of anchors in case of an exception
             anchors = get_fresh_anchors()
 
-# Start exploration from the initial URL
-start_url = "https://www.productinnovation.es/blog.html"
-explore_urls(start_url, start_url)
+for start_url in urls_list:
+    # Start exploration from the initial URL
+    explore_urls(start_url, start_url)
 
 # Print all visited URLs
 for url in visited_urls:
