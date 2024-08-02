@@ -4,8 +4,8 @@
 # Ignora la carpeta node_modules
 node_modules
 
-# Ignora todos los archivos de texto
-*.txt
+# Ignora el output
+RAG_TXT.txt
 
 # Ignora los archivos relacionados a API keys
 .env
