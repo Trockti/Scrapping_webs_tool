@@ -8,6 +8,9 @@ from urllib.parse import urljoin, urlparse
 import requests  # Import the requests module to check URL status
 import time
 
+anchors = False
+Parameters = False
+
 initial_urls = input("Por favor, introduzca las URL's de las que desea extraer los datos: ")
 try:
     wanted_depth = int(input("Por favor, introduzca la profundidad de la búsqueda: "))
@@ -50,11 +53,19 @@ def is_url_valid(url):
         return False
 
 def explore_urls(base_url, current_url, depth, wanted_depth):
+    global anchors, Parameters
     depth += 1
     
-    if current_url in visited_urls or "#" in urlparse(current_url).fragment:
+    if current_url in visited_urls:
         return
-
+    
+    if  not anchors:
+        if "#" in urlparse(current_url).fragment:
+            return
+    
+    if not Parameters:
+        if urlparse(current_url).query:
+            return
     # Add the current URL to the set of visited URLs
     visited_urls.add(current_url)
     
