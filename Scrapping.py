@@ -52,8 +52,8 @@ def is_url_valid(url):
         print(f"Request exception for URL {url}: {e}")
         return False
 
-def explore_urls(base_url, current_url, depth, wanted_depth):
-    global anchors, Parameters
+def explore_urls(base_url, current_url, depth):
+    global anchors, Parameters, wanted_depth
     depth += 1
     
     if current_url in visited_urls:
@@ -96,14 +96,14 @@ def explore_urls(base_url, current_url, depth, wanted_depth):
                 full_url = urljoin(current_url, href)
                 # Check if the URL is within the same domain and doesn't contain a hash fragment
                 if urlparse(full_url).netloc == urlparse(base_url).netloc and not urlparse(full_url).fragment:
-                    explore_urls(base_url, full_url, depth, wanted_depth)
+                    explore_urls(base_url, full_url, depth)
         except Exception as e:
             print(f"Exception occurred while processing {anchor}: {e}")
 
 for start_url in urls_list:
     depth = -1
     # Start exploration from the initial URL
-    explore_urls(start_url, start_url, depth, wanted_depth)
+    explore_urls(start_url, start_url, depth)
 
 # Print all visited URLs
 for url in visited_urls:
