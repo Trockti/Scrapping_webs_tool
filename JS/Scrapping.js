@@ -31,13 +31,13 @@ rl.question("Por favor, introduzca las URL's de las que desea extraer los datos:
         fs.writeFileSync("RAG_TXT.txt", "");
 
         // Setup Chrome options
+
         const chromeOptions = new chrome.Options()
-            .headless()
+            .addArguments("--headless")
             .addArguments("--ignore-certificate-errors")
             .addArguments("--disable-web-security")
             .addArguments("--allow-running-insecure-content")
             .setUserPreferences({ "profile.managed_default_content_settings.images": 2 });
-
         // Initialize the WebDriver
         const driver = new Builder()
             .forBrowser('chrome')
