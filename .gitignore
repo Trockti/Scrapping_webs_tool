@@ -15,3 +15,6 @@ RAG_TXT.txt
 
 # Ignora la carpeta de entorno virtual
 .venv
+
+# Ignora todos los directorios
+/*
