@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Scraper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #container {
+            margin: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        #controls {
+            display: flex;
+            flex-direction: column;
+            margin-left: 20px; /* Space between the main content and the controls */
+        }
+        #output {
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            flex: 1; /* Allow output div to take up remaining space */
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+        }
+        button.active {
+            background-color: #c0e0c0; /* Light green when active */
+        }
+        button.inactive {
+            background-color: #f0c0c0; /* Light red when inactive */
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="content">
+            <input type="text" id="urlInput" placeholder="Enter URLs (comma separated)" />
+            <input type="number" id="depthInput" placeholder="Enter depth" min="1" />
+            <button id="scrapeButton">Start Scraping</button>
+            <div id="output"></div>
+        </div>
+        <div id="controls">
+            <button id="anchors" class="inactive">anchors</button>
+            <button id="parameters" class="inactive">parameters</button>
+        </div>
+    </div>
+
+    <!-- Include client-side scripts -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>

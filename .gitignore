@@ -16,5 +16,5 @@ RAG_TXT.txt
 # Ignora la carpeta de entorno virtual
 .venv
 
-# Ignora todos los directorios
-/*
+# Ignora el directorio de pruebas de JS
+/JS
