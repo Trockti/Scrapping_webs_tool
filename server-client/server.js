@@ -5,6 +5,7 @@ const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const axios = require('axios');
 const { JSDOM } = require('jsdom');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -63,6 +64,9 @@ async function scrapper(urls, wantedDepth, socket) {
     chromeOptions.addArguments("--allow-running-insecure-content");
     chromeOptions.setUserPreferences({ "profile.managed_default_content_settings.images": 2 });
 
+    // Clear the file content before starting
+    fs.writeFileSync("RAG_TXT.txt", "");
+
     let driver = new Builder()
         .forBrowser('chrome')
         .setChromeOptions(chromeOptions)
@@ -114,6 +118,7 @@ async function scrapper(urls, wantedDepth, socket) {
 
         if (await isUrlValid(currentUrl)) {
             socket.emit('urlDiscovered', currentUrl);
+            fs.appendFileSync("RAG_TXT.txt", currentUrl + '\n');
         }
         if (depth >= wantedDepth) {
             return;
