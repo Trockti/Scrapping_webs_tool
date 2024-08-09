@@ -9,8 +9,11 @@ const { JSDOM } = require('jsdom');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+
 let anchors_allowed = false;
 let parameters_allowed = false;
+let shouldPause = false;
+let shouldStop = false;
 
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
@@ -29,8 +32,25 @@ io.on('connection', (socket) => {
     });
 
     socket.on('startScraping', async ({ urls, depth }) => {
+        shouldPause = false;
+        shouldStop = false;
         console.log('Scraping started');
         await scrapper(urls, depth, socket);
+    });
+
+    socket.on('pauseScraping', () => {
+        shouldPause = true;
+        console.log('Scraping paused');
+    });
+
+    socket.on('resumeScraping', () => {
+        shouldPause = false;
+        console.log('Scraping resumed');
+    });
+
+    socket.on('stopScraping', () => {
+        shouldStop = true;
+        console.log('Scraping stopped');
     });
 });
 
@@ -66,6 +86,13 @@ async function scrapper(urls, wantedDepth, socket) {
     }
 
     async function exploreUrls(baseUrl, currentUrl, depth, wantedDepth) {
+        if (shouldStop) return;
+
+        // Pause if shouldPause is true
+        while (shouldPause) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // wait for 1 second before checking again
+        }
+
         depth += 1;
 
         if (visitedUrls.has(currentUrl)) {

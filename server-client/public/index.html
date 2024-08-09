@@ -45,7 +45,7 @@
     </style>
 </head>
 <body>
-    <div id="container">
+    <div id="app">
         <div id="content">
             <input type="text" id="urlInput" placeholder="Enter URLs (comma separated)" />
             <input type="number" id="depthInput" placeholder="Enter depth" min="1" />
@@ -55,6 +55,10 @@
         <div id="controls">
             <button id="anchors" class="inactive">anchors</button>
             <button id="parameters" class="inactive">parameters</button>
+            <button id="start">resume</button>
+            <button id="pause">pause</button>
+            <button id="nextstep">stop</button>
+            <div id="indicator">0</div>
         </div>
     </div>
 
