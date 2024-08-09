@@ -68,7 +68,6 @@ io.on('connection', (socket) => {
 });
 
 async function scrapper(urls, wantedDepth, socket) {
-    console.log(`Parameters allowed: ${parameters_allowed}`);
     const chromeOptions = new chrome.Options();
     chromeOptions.addArguments('--headless');
     chromeOptions.addArguments("--ignore-certificate-errors");
@@ -102,10 +101,7 @@ async function scrapper(urls, wantedDepth, socket) {
     }
 
     async function exploreUrls(baseUrl, currentUrl, depth, wantedDepth) {
-        if (shouldStop){
-            await driver.quit();
-            return;
-        }
+        if (shouldStop) return;
 
         // Pause if shouldPause is true
         while (shouldPause) {
@@ -164,9 +160,11 @@ async function scrapper(urls, wantedDepth, socket) {
     for (const startUrl of urls) {
         let depth = -1;
         await exploreUrls(startUrl, startUrl, depth, wantedDepth);
+        socket.emit('urlDiscovered', "...............................................................................................................");
     }
 
     await driver.quit();
+    socket.emit('urlDiscovered','Scraping completed');
     console.log('Scraping completed.');
 }
 
