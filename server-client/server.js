@@ -6,6 +6,7 @@ const chrome = require('selenium-webdriver/chrome');
 const axios = require('axios');
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -55,6 +56,17 @@ io.on('connection', (socket) => {
     });
 });
 
+    // Serve the txt file for download
+    app.get('/download', (req, res) => {
+    const file = path.join(__dirname, 'output', 'RAG_TXT.txt');
+    res.download(file, 'RAG_TXT.txt', (err) => {
+        if (err) {
+            console.error('Error downloading file:', err);
+            res.status(500).send('Error downloading file');
+        }
+    });
+});
+
 async function scrapper(urls, wantedDepth, socket) {
     console.log(`Parameters allowed: ${parameters_allowed}`);
     const chromeOptions = new chrome.Options();
@@ -65,7 +77,7 @@ async function scrapper(urls, wantedDepth, socket) {
     chromeOptions.setUserPreferences({ "profile.managed_default_content_settings.images": 2 });
 
     // Clear the file content before starting
-    fs.writeFileSync("RAG_TXT.txt", "");
+    fs.writeFileSync("output/RAG_TXT.txt", "");
 
     let driver = new Builder()
         .forBrowser('chrome')
@@ -90,7 +102,10 @@ async function scrapper(urls, wantedDepth, socket) {
     }
 
     async function exploreUrls(baseUrl, currentUrl, depth, wantedDepth) {
-        if (shouldStop) return;
+        if (shouldStop){
+            await driver.quit();
+            return;
+        }
 
         // Pause if shouldPause is true
         while (shouldPause) {
@@ -118,7 +133,7 @@ async function scrapper(urls, wantedDepth, socket) {
 
         if (await isUrlValid(currentUrl)) {
             socket.emit('urlDiscovered', currentUrl);
-            fs.appendFileSync("RAG_TXT.txt", currentUrl + '\n');
+            fs.appendFileSync("output/RAG_TXT.txt", currentUrl + '\n');
         }
         if (depth >= wantedDepth) {
             return;

@@ -24,7 +24,7 @@
             white-space: pre-wrap;
             border: 1px solid #ccc;
             padding: 10px;
-            height: 300px;
+            height: 200px;
             overflow-y: auto;
             flex: 1; /* Allow output div to take up remaining space */
         }
@@ -42,6 +42,15 @@
         button.inactive {
             background-color: #f0c0c0; /* Light red when inactive */
         }
+        #fileDownloadLink {
+            margin-top: 10px;
+            display: block;
+            color: #007bff;
+            text-decoration: none;
+        }
+        #fileDownloadLink:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -51,14 +60,15 @@
             <input type="number" id="depthInput" placeholder="Enter depth" min="1" />
             <button id="scrapeButton">Start Scraping</button>
             <div id="output"></div>
+            <!-- Added download link -->
         </div>
         <div id="controls">
             <button id="anchors" class="inactive">anchors</button>
             <button id="parameters" class="inactive">parameters</button>
-            <button id="start">resume</button>
+            <button id="start">start</button>
             <button id="pause">pause</button>
             <button id="nextstep">stop</button>
-            <div id="indicator">0</div>
+            <button id="downloadFile">Download File</button>
         </div>
     </div>
 

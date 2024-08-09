@@ -1,52 +1,94 @@
 const socket = io();
 
+
 // Handle button clicks for toggling anchors
 document.getElementById('anchors').addEventListener('click', () => {
-    const button = document.getElementById('anchors');
-    button.classList.toggle('active');
-    button.classList.toggle('inactive');
-    const isActive = button.classList.contains('active');
-    socket.emit('setAnchorsAllowed', isActive);
-    console.log('Anchors button clicked');
+    if (socket.connected) {
+        const button = document.getElementById('anchors');
+        button.classList.toggle('active');
+        button.classList.toggle('inactive');
+        const isActive = button.classList.contains('active');
+        socket.emit('setAnchorsAllowed', isActive);
+        console.log('Anchors button clicked');
+    } else {
+        console.error('Socket not connected');
+    }
 });
 
 // Handle button clicks for toggling parameters
 document.getElementById('parameters').addEventListener('click', () => {
-    const button = document.getElementById('parameters');
-    button.classList.toggle('active');
-    button.classList.toggle('inactive');
-    const isActive = button.classList.contains('active');
-    socket.emit('setParametersAllowed', isActive);
-    console.log('Parameters button clicked');
+    if (socket.connected) {
+        const button = document.getElementById('parameters');
+        button.classList.toggle('active');
+        button.classList.toggle('inactive');
+        const isActive = button.classList.contains('active');
+        socket.emit('setParametersAllowed', isActive);
+        console.log('Parameters button clicked');
+    } else {
+        console.error('Socket not connected');
+    }
 });
 
 // Handle scraping start
 document.getElementById('scrapeButton').addEventListener('click', () => {
-    const urls = document.getElementById('urlInput').value.split(',').map(url => url.trim());
-    const depth = parseInt(document.getElementById('depthInput').value, 10);
-    if (urls.length && !isNaN(depth)) {
-        document.getElementById('output').textContent = ''; // Clear previous output
-        socket.emit('startScraping', { urls, depth });
+    if (socket.connected) {
+        const urls = document.getElementById('urlInput').value.split(',').map(url => url.trim());
+        const depth = parseInt(document.getElementById('depthInput').value, 10);
+        if (urls.length && !isNaN(depth)) {
+            document.getElementById('output').textContent = ''; // Clear previous output
+            socket.emit('startScraping', { urls, depth });
+        }
+    } else {
+        console.error('Socket not connected');
     }
 });
 
 // Handle Pause button click
 document.getElementById('pause').addEventListener('click', () => {
-    socket.emit('pauseScraping');
-    console.log('Scraping paused');
+    if (socket.connected) {
+        socket.emit('pauseScraping');
+        console.log('Scraping paused');
+    } else {
+        console.error('Socket not connected');
+    }
 });
 
-// Handle Resume button click (Reuse the start button as resume button)
+// Handle Resume button click
 document.getElementById('start').addEventListener('click', () => {
-    socket.emit('resumeScraping');
-    console.log('Scraping resumed');
+    if (socket.connected) {
+        socket.emit('resumeScraping');
+        console.log('Scraping resumed');
+    } else {
+        console.error('Socket not connected');
+    }
 });
 
-// Handle Stop button click (Reusing the next step button as stop button)
+// Handle Stop button click
 document.getElementById('nextstep').addEventListener('click', () => {
-    socket.emit('stopScraping');
-    console.log('Scraping stopped');
+    if (socket.connected) {
+        socket.emit('stopScraping');
+        console.log('Scraping stopped');
+    } else {
+        console.error('Socket not connected');
+    }
 });
+
+// Handle Download button click
+document.getElementById('downloadFile').addEventListener('click', () => {
+    const baseURL = window.location.origin; // Get the base URL of the current server
+    const filePath = '/download'; // Path to the file download endpoint
+    
+    // Create a new tab
+    const downloadWindow = window.open(baseURL + filePath, '_blank');
+    
+    // Use setTimeout to close the tab after a short delay
+    setTimeout(() => {
+        if (downloadWindow) {
+            downloadWindow.close();
+        }
+    }, 3000); // Adjust delay as needed
+});
+
 
 // Handle receiving discovered URLs
 socket.on('urlDiscovered', (url) => {
