@@ -95,7 +95,7 @@ def explore_urls(base_url, current_url, depth):
             if href:
                 full_url = urljoin(current_url, href)
                 # Check if the URL is within the same domain and doesn't contain a hash fragment
-                if urlparse(full_url).netloc == urlparse(base_url).netloc and not urlparse(full_url).fragment:
+                if urlparse(full_url).netloc == urlparse(base_url).netloc:
                     explore_urls(base_url, full_url, depth)
         except Exception as e:
             print(f"Exception occurred while processing {anchor}: {e}")

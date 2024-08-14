@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
 
     // Serve the txt file for download
     app.get('/download', (req, res) => {
-    const file = path.join(__dirname, 'output', 'RAG_TXT.txt');
+    const file = path.join(__dirname, 'URL', 'RAG_TXT.txt');
     res.download(file, 'RAG_TXT.txt', (err) => {
         if (err) {
             console.error('Error downloading file:', err);
@@ -76,7 +76,7 @@ async function scrapper(urls, wantedDepth, socket) {
     chromeOptions.setUserPreferences({ "profile.managed_default_content_settings.images": 2 });
 
     // Clear the file content before starting
-    fs.writeFileSync("output/RAG_TXT.txt", "");
+    fs.writeFileSync("URL/RAG_TXT.txt", "");
 
     let driver = new Builder()
         .forBrowser('chrome')
@@ -129,7 +129,7 @@ async function scrapper(urls, wantedDepth, socket) {
 
         if (await isUrlValid(currentUrl)) {
             socket.emit('urlDiscovered', currentUrl);
-            fs.appendFileSync("output/RAG_TXT.txt", currentUrl + '\n');
+            fs.appendFileSync("URL/RAG_TXT.txt", currentUrl + '\n');
         }
         if (depth >= wantedDepth) {
             return;
@@ -147,7 +147,7 @@ async function scrapper(urls, wantedDepth, socket) {
                 const href = anchor.href;
                 if (href) {
                     const fullUrl = new URL(href, currentUrl).toString();
-                    if (new URL(fullUrl).hostname === new URL(baseUrl).hostname && !new URL(fullUrl).hash) {
+                    if (new URL(fullUrl).hostname === new URL(baseUrl).hostname) {
                         await exploreUrls(baseUrl, fullUrl, depth, wantedDepth);
                     }
                 }
