@@ -16,12 +16,17 @@ let anchors_allowed = false;
 let parameters_allowed = false;
 let shouldPause = false;
 let shouldStop = false;
+let depth_allowed = true;
 
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
 io.on('connection', (socket) => {
     console.log('A client connected');
 
+    socket.on('eliminateDepth', (state) => {
+        depth_allowed = state;
+        console.log(`Depth allowed: ${depth_allowed}`);
+    });
     // Handle button state changes
     socket.on('setAnchorsAllowed', (state) => {
         anchors_allowed = state;
@@ -131,9 +136,11 @@ async function scrapper(urls, wantedDepth, socket) {
             socket.emit('urlDiscovered', currentUrl);
             fs.appendFileSync("URL/RAG_TXT.txt", currentUrl + '\n');
         }
-        if (depth >= wantedDepth) {
-            return;
-        }
+        if (depth_allowed){
+            if (depth >= wantedDepth) {
+                return;
+            }
+        }   
 
         await driver.get(currentUrl);
         await driver.wait(until.elementLocated(By.tagName('body')), 10000);

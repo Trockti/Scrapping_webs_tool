@@ -34,8 +34,16 @@ document.getElementById('scrapeButton').addEventListener('click', () => {
     if (socket.connected) {
         const urls = document.getElementById('urlInput').value.split(',').map(url => url.trim());
         const depth = parseInt(document.getElementById('depthInput').value, 10);
-        if (urls.length && !isNaN(depth)) {
+        if (urls.length) {
             document.getElementById('output').textContent = ''; // Clear previous output
+            if (isNaN(depth)) {
+                socket.emit('eliminateDepth',  false );
+                console.log('Depth is not a number');
+            }
+            else {
+                console.log('Depth is a number');
+                socket.emit('eliminateDepth',  true );
+            }
             socket.emit('startScraping', { urls, depth });
         }
     } else {
