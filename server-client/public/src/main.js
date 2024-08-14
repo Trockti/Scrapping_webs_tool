@@ -1,9 +1,55 @@
 const socket = io();
 
+let isPaused = false;
+
 // Toggle visibility of advanced options
 document.getElementById('advancedOptionsButton').addEventListener('click', () => {
     const advancedOptions = document.getElementById('advancedOptions');
     advancedOptions.style.display = advancedOptions.style.display === 'none' ? 'flex' : 'none';
+});
+
+// Toggle button between Pause and Resume
+document.getElementById('toggleButton').addEventListener('click', () => {
+    const toggleButton = document.getElementById('toggleButton');
+    
+    if (socket.connected) {
+        if (isPaused) {
+            // Resume the scraping
+            socket.emit('resumeScraping');
+            toggleButton.textContent = 'Pause';
+            toggleButton.classList.remove('resumed');
+            toggleButton.classList.add('paused');
+            isPaused = false;
+            console.log('Scraping resumed');
+        } else {
+            // Pause the scraping
+            socket.emit('pauseScraping');
+            toggleButton.textContent = 'Resume';
+            toggleButton.classList.remove('paused');
+            toggleButton.classList.add('resumed');
+            isPaused = true;
+            console.log('Scraping paused');
+        }
+    } else {
+        console.error('Socket not connected');
+    }
+});
+
+// Handle Stop button click
+document.getElementById('stopButton').addEventListener('click', () => {
+    if (socket.connected) {
+        socket.emit('stopScraping');
+        console.log('Scraping stopped');
+
+        // Reset the toggle button to Pause state
+        const toggleButton = document.getElementById('toggleButton');
+        toggleButton.textContent = 'Pause';
+        toggleButton.classList.remove('active');
+        toggleButton.classList.add('inactive');
+        isPaused = false;
+    } else {
+        console.error('Socket not connected');
+    }
 });
 
 // Handle button clicks for toggling anchors
@@ -51,36 +97,6 @@ document.getElementById('scrapeButton').addEventListener('click', () => {
             }
             socket.emit('startScraping', { urls, depth });
         }
-    } else {
-        console.error('Socket not connected');
-    }
-});
-
-// Handle Pause button click
-document.getElementById('pause').addEventListener('click', () => {
-    if (socket.connected) {
-        socket.emit('pauseScraping');
-        console.log('Scraping paused');
-    } else {
-        console.error('Socket not connected');
-    }
-});
-
-// Handle Resume button click
-document.getElementById('start').addEventListener('click', () => {
-    if (socket.connected) {
-        socket.emit('resumeScraping');
-        console.log('Scraping resumed');
-    } else {
-        console.error('Socket not connected');
-    }
-});
-
-// Handle Stop button click
-document.getElementById('nextstep').addEventListener('click', () => {
-    if (socket.connected) {
-        socket.emit('stopScraping');
-        console.log('Scraping stopped');
     } else {
         console.error('Socket not connected');
     }

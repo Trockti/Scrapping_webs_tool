@@ -34,13 +34,21 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             cursor: pointer;
-            background-color: #f0f0f0;
+        }
+        #stopButton {
+            background-color: #f0c0c0; /* Red */
         }
         button.active {
-            background-color: #c0e0c0;
+            background-color: #c0e0c0; /* Green */
         }
         button.inactive {
-            background-color: #f0c0c0;
+            background-color: #f0c0c0; /* Gray */
+        }
+        button.resumed {
+            background-color: #c0e0c0; /* Green */
+        }
+        button.paused {
+            background-color: #ccc; /* Gray */
         }
         #fileDownloadLink {
             margin-top: 10px;
@@ -76,15 +84,14 @@
             <input type="text" id="urlInput" placeholder="Enter URLs (comma separated)" />
             <div id="scrapeControls">
                 <button id="scrapeButton">Start Scraping</button>
-                <button id="start">Start</button>
-                <button id="pause">Pause</button>
-                <button id="nextstep">Stop</button>
+                <button id="toggleButton" class="paused">Pause</button>
+                <button id="stopButton">Stop</button>
             </div>
             <div id="output"></div>
         </div>
         <div id="controls">
             <button id="advancedOptionsButton">Advanced Options</button>
-            <div id="advancedOptions">
+            <div id="advancedOptions" style="display: none;">
                 <input type="number" id="depthInput" placeholder="Enter depth" min="1" />
                 <button id="anchors" class="inactive">Anchors</button>
                 <button id="parameters" class="inactive">Parameters</button>
