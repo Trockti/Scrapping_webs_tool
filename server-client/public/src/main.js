@@ -1,5 +1,10 @@
 const socket = io();
 
+// Toggle visibility of advanced options
+document.getElementById('advancedOptionsButton').addEventListener('click', () => {
+    const advancedOptions = document.getElementById('advancedOptions');
+    advancedOptions.style.display = advancedOptions.style.display === 'none' ? 'flex' : 'none';
+});
 
 // Handle button clicks for toggling anchors
 document.getElementById('anchors').addEventListener('click', () => {
@@ -96,7 +101,6 @@ document.getElementById('downloadFile').addEventListener('click', () => {
         }
     }, 3000); // Adjust delay as needed
 });
-
 
 // Handle receiving discovered URLs
 socket.on('urlDiscovered', (url) => {

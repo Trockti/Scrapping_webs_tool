@@ -18,7 +18,7 @@
         #controls {
             display: flex;
             flex-direction: column;
-            margin-left: 20px; /* Space between the main content and the controls */
+            margin-left: 20px;
         }
         #output {
             white-space: pre-wrap;
@@ -26,7 +26,7 @@
             padding: 10px;
             height: 200px;
             overflow-y: auto;
-            flex: 1; /* Allow output div to take up remaining space */
+            flex: 1;
         }
         button {
             margin-top: 10px;
@@ -37,10 +37,10 @@
             background-color: #f0f0f0;
         }
         button.active {
-            background-color: #c0e0c0; /* Light green when active */
+            background-color: #c0e0c0;
         }
         button.inactive {
-            background-color: #f0c0c0; /* Light red when inactive */
+            background-color: #f0c0c0;
         }
         #fileDownloadLink {
             margin-top: 10px;
@@ -51,23 +51,44 @@
         #fileDownloadLink:hover {
             text-decoration: underline;
         }
+        #advancedOptions {
+            display: none;
+            flex-direction: column;
+            margin-top: 10px;
+        }
+        #scrapeControls {
+            display: flex;
+            margin-top: 10px;
+            gap: 10px;
+        }
+        #advancedOptions input {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="content">
             <input type="text" id="urlInput" placeholder="Enter URLs (comma separated)" />
-            <input type="number" id="depthInput" placeholder="Enter depth" min="1" />
-            <button id="scrapeButton">Start Scraping</button>
+            <div id="scrapeControls">
+                <button id="scrapeButton">Start Scraping</button>
+                <button id="start">Start</button>
+                <button id="pause">Pause</button>
+                <button id="nextstep">Stop</button>
+            </div>
             <div id="output"></div>
-            <!-- Added download link -->
         </div>
         <div id="controls">
-            <button id="anchors" class="inactive">anchors</button>
-            <button id="parameters" class="inactive">parameters</button>
-            <button id="start">start</button>
-            <button id="pause">pause</button>
-            <button id="nextstep">stop</button>
+            <button id="advancedOptionsButton">Advanced Options</button>
+            <div id="advancedOptions">
+                <input type="number" id="depthInput" placeholder="Enter depth" min="1" />
+                <button id="anchors" class="inactive">Anchors</button>
+                <button id="parameters" class="inactive">Parameters</button>
+            </div>
             <button id="downloadFile">Download File</button>
         </div>
     </div>
