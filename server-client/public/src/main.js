@@ -2,6 +2,69 @@ const socket = io();
 
 let isPaused = false;
 
+// Toggle visibility of azure options
+document.getElementById('azureOptionsButton').addEventListener('click', () => {
+    const advancedOptions = document.getElementById('azureOptions');
+    advancedOptions.style.display = advancedOptions.style.display === 'none' ? 'flex' : 'none';
+});
+
+// Handle button to upload a file to Azure
+document.getElementById('Azure').addEventListener('click', async () => {
+    const URL = document.getElementById('azureURL').value;
+    if (URL == '') {
+        const accountName = document.getElementById('azureAccountName').value;
+        const sasToken = document.getElementById('azureToken').value;
+        const containerName = document.getElementById('azureContainerName2').value;
+
+        if (accountName == '' || sasToken == '' || containerName == '') {
+            alert('Please fill in all the fields');
+            return;
+        }
+
+        try {
+            const response = await fetch('/upload-to-azure', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    accountName: accountName,
+                    sasToken: sasToken,
+                    containerName: containerName
+                })
+            });
+
+            const result = await response.text();
+            alert(result);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            alert('Error uploading file');
+        }
+    } else {
+        // Handle the case where the link is provided (if applicable)
+        const containerName = document.getElementById('azureContainerName1').value;
+        try {
+            const response = await fetch('/upload-to-azure-link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    URL: URL,
+                    containerName: containerName
+                    })
+            });
+
+            const result = await response.text();
+            alert(result);
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            alert('Error uploading file');
+        }
+        
+    }
+});
+
 // Toggle visibility of advanced options
 document.getElementById('advancedOptionsButton').addEventListener('click', () => {
     const advancedOptions = document.getElementById('advancedOptions');

@@ -7,6 +7,7 @@ const axios = require('axios');
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const path = require('path');
+const { BlobServiceClient } = require('@azure/storage-blob');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +19,7 @@ let shouldPause = false;
 let shouldStop = false;
 let depth_allowed = true;
 
+app.use(express.json()); // For parsing application/json
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
 io.on('connection', (socket) => {
@@ -27,6 +29,7 @@ io.on('connection', (socket) => {
         depth_allowed = state;
         console.log(`Depth allowed: ${depth_allowed}`);
     });
+
     // Handle button state changes
     socket.on('setAnchorsAllowed', (state) => {
         anchors_allowed = state;
@@ -61,8 +64,8 @@ io.on('connection', (socket) => {
     });
 });
 
-    // Serve the txt file for download
-    app.get('/download', (req, res) => {
+// Serve the txt file for download
+app.get('/download', (req, res) => {
     const file = path.join(__dirname, 'URL', 'RAG_TXT.txt');
     res.download(file, 'RAG_TXT.txt', (err) => {
         if (err) {
@@ -72,6 +75,56 @@ io.on('connection', (socket) => {
     });
 });
 
+// Endpoint to upload file to Azure
+app.post('/upload-to-azure', async (req, res) => {
+    try {
+        const filePath = path.join(__dirname, 'URL', 'RAG_TXT.txt');
+        
+        const { accountName, sasToken, containerName } = req.body;
+
+        // Create the BlobServiceClient
+        const blobServiceClient = new BlobServiceClient(`https://${accountName}.blob.core.windows.net?${sasToken}`);
+        const containerClient = blobServiceClient.getContainerClient(containerName);
+
+        // Create a unique blob name using the file name
+        const blobName = path.basename(filePath);
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+        // Upload the file to Azure Blob Storage
+        const uploadBlobResponse = await blockBlobClient.uploadFile(filePath);
+        console.log('File uploaded successfully:', uploadBlobResponse);
+
+        res.send(`File uploaded successfully. Blob URL: ${blockBlobClient.url}`);
+    } catch (error) {
+        console.error("Error uploading file:", error);
+        res.status(500).send("Error uploading file.");
+    }
+});
+
+app.post('/upload-to-azure-link', async (req, res) => {
+    try {
+        const filePath = path.join(__dirname, 'URL', 'RAG_TXT.txt');
+        
+        const { containerUrl } = req.body;
+
+        // Create the BlobServiceClient
+        const blobServiceClient = new BlobServiceClient(containerUrl);
+        const containerClient = blobServiceClient.getContainerClient('');
+
+        // Create a unique blob name using the file name
+        const blobName = path.basename(filePath);
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+        // Upload the file to Azure Blob Storage
+        const uploadBlobResponse = await blockBlobClient.uploadFile(filePath);
+        console.log('File uploaded successfully:', uploadBlobResponse);
+
+        res.send(`File uploaded successfully. Blob URL: ${blockBlobClient.url}`);
+    } catch (error) {
+        console.error("Error uploading file:", error);
+        res.status(500).send("Error uploading file.");
+    }
+});
 async function scrapper(urls, wantedDepth, socket) {
     const chromeOptions = new chrome.Options();
     chromeOptions.addArguments('--headless');

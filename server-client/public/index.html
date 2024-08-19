@@ -76,6 +76,34 @@
             border-radius: 4px;
             flex: 1;
         }
+        #azureOptions input, #azureOptions div {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+        }
+        #azureOptions div {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #azureOptionsButton {
+            background-color: #0078d4;
+            color: white;
+        }
+        #Azure {
+            background-color: #0078d4;
+            color: white;
+        }
+        #urlInput {
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -97,6 +125,19 @@
                 <button id="parameters" class="inactive">Parameters</button>
             </div>
             <button id="downloadFile">Download File</button>
+            <button id="azureOptionsButton">Azure Options</button>
+            <div id="azureOptions" style="display: none;">
+                <div>
+                    <input type="text" id="azureURL" placeholder="Enter Azure URL" />
+                    <input type="text" id="azureContainerName1" placeholder="Enter Container Name" />   
+                </div>
+                <div>
+                    <input type="text" id="azureAccountName" placeholder="Enter Account Name" />
+                    <input type="text" id="azureToken" placeholder="Enter Token" />
+                    <input type="text" id="azureContainerName2" placeholder="Enter Container Name" />
+                </div>
+                <button id="Azure">Upload to Azure</button>
+            </div>
         </div>
     </div>
 
