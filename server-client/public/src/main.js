@@ -143,11 +143,29 @@ document.getElementById('parameters').addEventListener('click', () => {
     }
 });
 
+document.getElementById('scripts').addEventListener('click', () => {
+    if (socket.connected) {
+        const button = document.getElementById('scripts');
+        button.classList.toggle('active');
+        button.classList.toggle('inactive');
+        const isActive = button.classList.contains('active');
+        socket.emit('setScriptsAllowed', isActive);
+        console.log('Scripts button clicked');
+    } else {
+        console.error('Socket not connected');
+    }
+});
 // Handle scraping start
 document.getElementById('scrapeButton').addEventListener('click', () => {
     if (socket.connected) {
-        const urls = document.getElementById('urlInput').value.split(',').map(url => url.trim());
+        const input = document.getElementById('urlInput').value;
+        if (input === '') {
+            alert('Please enter a URL');
+            return;
+        }
+        const urls = input.split(',').map(url => url.trim());
         const depth = parseInt(document.getElementById('depthInput').value, 10);
+
         if (urls.length) {
             document.getElementById('output').textContent = ''; // Clear previous output
             if (isNaN(depth)) {

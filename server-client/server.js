@@ -15,6 +15,7 @@ const io = socketIo(server);
 
 let anchors_allowed = false;
 let parameters_allowed = false;
+let scripts_allowed = false;
 let shouldPause = false;
 let shouldStop = false;
 let depth_allowed = true;
@@ -34,6 +35,11 @@ io.on('connection', (socket) => {
     socket.on('setAnchorsAllowed', (state) => {
         anchors_allowed = state;
         console.log(`Anchors allowed: ${anchors_allowed}`);
+    });
+
+    socket.on('setScriptsAllowed', (state) => {
+        scripts_allowed = state;
+        console.log(`Scripts allowed: ${scripts_allowed}`);
     });
 
     socket.on('setParametersAllowed', (state) => {
@@ -125,6 +131,27 @@ app.post('/upload-to-azure-link', async (req, res) => {
         res.status(500).send("Error uploading file.");
     }
 });
+
+function extractHttpHttpsSubstrings(text) {
+    /**
+     * Extracts all substrings that start with '"https:' or '"http:', 
+     * optionally followed by 'www.', followed by any number of characters, 
+     * and ending with a double-quote.
+     * 
+     * @param {string} text - The input text containing multiple lines.
+     * @returns {Array} - A list of substrings that match the pattern.
+     */
+
+    // Define the regex pattern to match substrings starting with "http:" or "https:" and ending with a double-quote
+    const pattern = /href="([^"]*)"/g;
+    
+    // Find all matches using text.match
+    const matches = text.match(pattern);
+
+    // Return an array with matched substrings, removing the leading 'href="' and trailing '"'
+    return matches ? matches.map(match => match.slice(6, -1)) : [];
+}
+
 async function scrapper(urls, wantedDepth, socket) {
     const chromeOptions = new chrome.Options();
     chromeOptions.addArguments('--headless');
@@ -183,6 +210,12 @@ async function scrapper(urls, wantedDepth, socket) {
             }
         }
 
+        if (!scripts_allowed) {
+            if (currentUrl.endsWith('.js') || currentUrl.endsWith('.css') || currentUrl.endsWith('.svg')) {
+                return;
+            }
+        }
+
         visitedUrls.add(currentUrl);
 
         if (await isUrlValid(currentUrl)) {
@@ -199,20 +232,26 @@ async function scrapper(urls, wantedDepth, socket) {
         await driver.wait(until.elementLocated(By.tagName('body')), 10000);
 
         const pageSource = await driver.getPageSource();
-        const soup = new JSDOM(pageSource);
-        const anchors = await getAnchorsFromSoup(soup);
 
-        for (const anchor of anchors) {
-            try {
-                const href = anchor.href;
-                if (href) {
-                    const fullUrl = new URL(href, currentUrl).toString();
-                    if (new URL(fullUrl).hostname === new URL(baseUrl).hostname) {
-                        await exploreUrls(baseUrl, fullUrl, depth, wantedDepth);
-                    }
-                }
-            } catch (error) {
-                console.log(`Exception occurred while processing ${anchor}: ${error}`);
+        // for (const anchor of anchors) {
+        //     try {
+        //         const href = anchor.href;
+        //         if (href) {
+        //             const fullUrl = new URL(href, currentUrl).toString();
+        //             if (new URL(fullUrl).hostname === new URL(baseUrl).hostname) {
+        //                 await exploreUrls(baseUrl, fullUrl, depth, wantedDepth);
+        //             }
+        //         }
+        //     } catch (error) {
+        //         console.log(`Exception occurred while processing ${anchor}: ${error}`);
+        //     }
+        // }
+        const urls_list = extractHttpHttpsSubstrings(pageSource);
+        for (const url of urls_list){
+            const fullUrl = new URL(url, currentUrl).toString();
+            // Check if the URL is within the same domain and doesn't contain a hash fragment
+            if (new URL(fullUrl).hostname === new URL(baseUrl).hostname) {
+                await exploreUrls(baseUrl, fullUrl, depth, wantedDepth);
             }
         }
     }
