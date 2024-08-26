@@ -2,11 +2,77 @@ const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const readline = require('readline');
+const path = require('path');
+const axios = require('axios');
 
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
+
+
+function extractImagesfromURL(htmlString) {
+    /**
+     * Extracts all substrings that start with '"https:' or '"http:', 
+     * optionally followed by 'www.', followed by any number of characters, 
+     * and ending with a double-quote.
+     * 
+     * @param {string} text - The input text containing multiple lines.
+     * @returns {Array} - A list of substrings that match the pattern.
+     */
+    const imgTagRegex = /<img\b[^>]*\bsrc=["']([^"']*)["'][^>]*>/gi;
+    const matches = [];
+    let match;
+  
+    // Use the regular expression to find all matches in the HTML string
+    while ((match = imgTagRegex.exec(htmlString)) !== null) {
+      // Push the captured src value into the matches array
+      matches.push(match[1]);
+    }
+  
+    return matches;
+  }
+
+  // Function to download an image
+async function downloadImage(url, Path) {
+    console.log('Downloading image:', url);
+    console.log('Path:', Path);
+    let savePath = path.join(__dirname, Path);
+    console.log('Saving to:', savePath);
+    try {
+      // Get the response data as a stream
+      const response = await axios({
+        url,
+        method: 'GET',
+        responseType: 'stream',
+      });
+  
+      // Ensure the directory exists
+      const folderPath = path.dirname(savePath);
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, { recursive: true });
+      }
+  
+      // Pipe the stream to a writable file stream
+      response.data.pipe(fs.createWriteStream(savePath));
+  
+      // Return a promise that resolves when the download is complete
+      return new Promise((resolve, reject) => {
+        response.data.on('end', () => {
+          console.log('Download completed!');
+          resolve();
+        });
+  
+        response.data.on('error', (err) => {
+          console.error('Error downloading image:', err);
+          reject(err);
+        });
+      });
+    } catch (error) {
+      console.error('Error downloading image:', error);
+    }
+  }
+  
 
 rl.question("Please enter the URLs you want to extract data from: ", initialUrls => {
     rl.question("Please enter the depth of the search: ", async wantedDepthStr => {
@@ -164,8 +230,31 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         // Optional: Save the text to a file
         fs.writeFileSync("output/URL_text_all.txt", extractedText);
 
+        if (!fs.existsSync("output/images")) {
+            fs.mkdirSync("output/images", { recursive: true });
+          }
+          else {
+            // Restart output folder
+            fs.rm("output/images", { recursive: true });
+          }
+        
+        const images = extractImagesfromURL(await driver.getPageSource());
 
-        }
+
+
+        // Print the extracted images
+        console.log("Extracted Images:", images);
+
+
+        // Download the images
+        await Promise.all(images.map(async (imageUrl, index) => {
+            console.log("Downloading extension:", imageUrl.split('.').pop());  
+            let extension = imageUrl.split('.').pop() == 'svg' ? imageUrl.split('.').pop(): 'png';
+            let image = new URL(imageUrl, currentUrl).toString();
+            await downloadImage(image, `output/images/${index}.${extension}`);
+        }));
+
+    }
 
         (async () => {
             for (const startUrl of urlsList) {
