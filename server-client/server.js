@@ -211,7 +211,7 @@ async function scrapper(urls, wantedDepth, socket) {
         }
 
         if (!scripts_allowed) {
-            if (currentUrl.endsWith('.js') || currentUrl.endsWith('.css') || currentUrl.endsWith('.svg')) {
+            if (currentUrl.endsWith('.js') || currentUrl.endsWith('.css') || currentUrl.endsWith('.svg') || currentUrl.endsWith('.ico')) {
                 return;
             }
         }
