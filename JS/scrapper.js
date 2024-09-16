@@ -233,10 +233,6 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         if (!fs.existsSync("output/images")) {
             fs.mkdirSync("output/images", { recursive: true });
           }
-          else {
-            // Restart output folder
-            fs.rm("output/images", { recursive: true });
-          }
         
         const images = extractImagesfromURL(await driver.getPageSource());
 
