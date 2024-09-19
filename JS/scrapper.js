@@ -11,6 +11,7 @@ const rl = readline.createInterface({
 });
 
 
+
 function extractImagesfromURL(htmlString) {
     /**
      * Extracts all substrings that start with '"https:' or '"http:', 
@@ -109,70 +110,6 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         const visitedUrls = new Set();
 
         async function getFullHTMLIncludingShadowRoots(element) {
-            // If it's a text node, return its content
-            if (element.nodeType === Node.TEXT_NODE) {
-                return element.textContent.trim();
-            }
-
-            // If it's a comment node, return the comment
-            if (element.nodeType === Node.COMMENT_NODE) {
-                return `<!-- ${element.textContent} -->`;
-            }
-
-            // If it's an element node, start building the HTML string
-            let outerHTML = `<${element.tagName.toLowerCase()}`;
-
-            // Add attributes
-            for (let attr of element.attributes) {
-                outerHTML += ` ${attr.name}="${attr.value}"`;
-            }
-
-            outerHTML += '>';
-
-            // Handle shadow DOM if present
-            if (element.shadowRoot) {
-                outerHTML += '<!-- Start of Shadow Root -->';
-                for (const child of element.shadowRoot.childNodes) {
-                    outerHTML += await getFullHTMLIncludingShadowRoots(child);
-                }
-                outerHTML += '<!-- End of Shadow Root -->';
-            }
-
-            // Recursively process child nodes
-            for (const child of element.childNodes) {
-                outerHTML += await getFullHTMLIncludingShadowRoots(child);
-            }
-
-            // Close the tag
-            outerHTML += `</${element.tagName.toLowerCase()}>`;
-
-            return outerHTML;
-        }
-
-        async function exploreUrls(baseUrl, currentUrl, depth, wantedDepth) {
-            if (depth >= wantedDepth || visitedUrls.has(currentUrl)) {
-                return;
-            }
-
-            visitedUrls.add(currentUrl);
-            depth += 1;
-
-            // Open the current URL
-            await driver.get(currentUrl);
-            await driver.wait(until.elementLocated(By.tagName('body')), 10000);
-
-        // Get the text content of all elements
-        const pageText = await driver.executeScript(`
-            return document.body.innerText;
-        `);
-
-        console.log("Extracted Text:", pageText);
-
-        // Save the text to a file (optional)
-        fs.writeFileSync("output/page_text.txt", pageText);
-
-        // Extract all visible text content from the DOM and shadow roots
-        const extractedText = await driver.executeScript(`
             function getTextFromShadowRoot(shadowRoot) {
                 let text = '';
 
@@ -221,14 +158,156 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             }
 
             // Start with the document root
-            return getAllInnerText(document.documentElement);
+            return getAllInnerText(document.body);
+        }
+        
+        getFullHTMLIncludingShadowRoots
+        async function exploreUrls(baseUrl, currentUrl, depth, wantedDepth) {
+            if (depth >= wantedDepth || visitedUrls.has(currentUrl)) {
+                return;
+            }
+
+            visitedUrls.add(currentUrl);
+            depth += 1;
+
+            // Open the current URL
+            await driver.get(currentUrl);
+            await driver.wait(until.elementLocated(By.tagName('body')), 10000);
+
+        // Get the text content of all elements
+        const pageText = await driver.executeScript(`
+            return document.body.innerText;
         `);
 
-        // Print or save the extracted text
-        console.log("Extracted Shadow DOM Text:", extractedText);
+
+        // Save the text to a file (optional)
+        fs.writeFileSync("output/page_text.txt", pageText);
+        
+
+        // Extract all visible text content from the DOM and shadow roots
+        const extractedText = await driver.executeScript(`
+            function getTextFromShadowRoot(shadowRoot, visitedNodes, excludedTags) {
+                let text = '';
+                shadowRoot.childNodes.forEach(child => {
+                    if (child.nodeType === Node.TEXT_NODE) {
+                        if (child.textContent.trim()) {
+                            text += child.textContent.trim() + '\\n';
+                        }
+                    } else if (child.nodeType === Node.ELEMENT_NODE) {
+                        // Recursively get text from shadow roots and elements
+                        if (child.shadowRoot) {
+                            text += getTextFromShadowRoot(child.shadowRoot);
+                        } else {
+                            text += getAllInnerText(child);
+                        }
+                    }
+                });
+                return text;
+            }
+        
+            function getAllInnerText(node, visitedNodes = new Set(), excludedTags = []) {
+                let textContent = '';
+        
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    node.tagName.toLowerCase() !== 'script' &&
+                    node.tagName.toLowerCase() !== 'style') {
+        
+                    // Skip processing if the tag is in the exclusion list
+                    if (excludedTags.includes(node.tagName.toLowerCase())) {
+                        return '';
+                    }
+        
+                    // Prevent duplicate processing of the same element
+                    if (visitedNodes.has(node)) {
+                        return '';
+                    }
+                    visitedNodes.add(node);
+        
+                    if (node.shadowRoot) {
+                        textContent += getTextFromShadowRoot(node.shadowRoot, visitedNodes, excludedTags);
+                    }
+        
+                    node.childNodes.forEach(childNode => {
+                        textContent += getAllInnerText(childNode, visitedNodes, excludedTags);
+                    });
+                }
+        
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (node.textContent.trim()) {
+                        textContent += node.textContent.trim() + '\\n';
+                    }
+                }
+        
+                return textContent;
+            }
+            
+            
+            // Define which tags/components to exclude
+            const excludedTags = ['one-nav-bar-menu-item', 'a', 'one-global-header']; // Add more tags as needed
+        
+            return getAllInnerText(document.body, new Set(), excludedTags);
+        `);
+
 
         // Optional: Save the text to a file
         fs.writeFileSync("output/URL_text_all.txt", extractedText);
+
+        const page_data = {
+            url: currentUrl,
+            text: extractedText,
+        }
+        fs.writeFileSync("output/page_data.jsonl", JSON.stringify(page_data));
+        
+        const complete_html = await driver.executeScript(`
+            // Function to extract the shadow DOM content recursively
+            function getAllHTMLIncludingShadowRoots(node) {
+                let html = node.outerHTML || '';
+                
+                // If node has a shadow root, recurse into it
+                if (node.shadowRoot) {
+                    let shadowRootHTML = '';
+                    for (const child of node.shadowRoot.children) {
+                        shadowRootHTML += getAllHTMLIncludingShadowRoots(child);
+                    }
+                    html = html.replace('</' + node.tagName.toLowerCase() + '>', shadowRootHTML + '</' + node.tagName.toLowerCase() + '>');
+                }
+
+                // Recurse into children if the node has any
+                for (const child of node.children) {
+                    html = html.replace(child.outerHTML, getAllHTMLIncludingShadowRoots(child));
+                }
+                
+                return html;
+            }
+
+            // Get the full page HTML including shadow DOM
+            return getAllHTMLIncludingShadowRoots(document.documentElement);
+        `);
+
+        // Split the text into an array of lines
+        let lines = complete_html.split('\n');
+
+        // Filter out empty lines (trim whitespace to handle lines with spaces only)
+        let filteredLines = lines.filter(line => line.trim() !== '');
+
+        // Join the filtered lines back into a string
+        const html = filteredLines.join('\n');
+
+        fs.writeFileSync("output/complete_html.html", html);
+
+
+      
+        const page_html = {
+            url: currentUrl,
+            html: html,
+            }
+        fs.writeFileSync("output/page_html.jsonl", JSON.stringify(page_html));
+        
+
+
+        
+        fs.writeFileSync("output/parents.jsonl", JSON.stringify(parents));
+
 
         if (!fs.existsSync("output/images")) {
             fs.mkdirSync("output/images", { recursive: true });
