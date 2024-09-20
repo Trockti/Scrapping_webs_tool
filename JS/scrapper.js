@@ -161,7 +161,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             return getAllInnerText(document.body);
         }
         
-        getFullHTMLIncludingShadowRoots
+        
         async function exploreUrls(baseUrl, currentUrl, depth, wantedDepth) {
             if (depth >= wantedDepth || visitedUrls.has(currentUrl)) {
                 return;
@@ -256,7 +256,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             url: currentUrl,
             text: extractedText,
         }
-        fs.writeFileSync("output/page_data.jsonl", JSON.stringify(page_data));
+        fs.writeFileSync("output/page_data.jsonl", JSON.stringify(page_data, null, 2));
         
         const complete_html = await driver.executeScript(`
             // Function to extract the shadow DOM content recursively
@@ -301,13 +301,231 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             url: currentUrl,
             html: html,
             }
-        fs.writeFileSync("output/page_html.jsonl", JSON.stringify(page_html));
+        fs.writeFileSync("output/page_html.jsonl", JSON.stringify(page_html, null, 2));
         
 
-
+        const parents = await driver.executeScript(`
+            function getTextFromShadowRoot(shadowRoot, visitedNodes, excludedTags, parents) {
+                let text = '';
+                shadowRoot.childNodes.forEach(child => {
+                    if (child.nodeType === Node.TEXT_NODE) {
+                        if (child.textContent.trim()) {
+                            if (!parents[child.parentNode.tagName.toLowerCase()]) {
+                                parents[child.parentNode.tagName.toLowerCase()] = [];
+                            }
+                            parents[child.parentNode.tagName.toLowerCase()].push(child.textContent.trim());
+                            text += child.textContent.trim() + '\\n';
+                        }
+                    } else if (child.nodeType === Node.ELEMENT_NODE) {
+                        // Recursively get text from shadow roots and elements
+                        if (child.shadowRoot) {
+                            text += getTextFromShadowRoot(child.shadowRoot);
+                        } else {
+                            text += getAllInnerText(child, visitedNodes, excludedTags, parents);
+                        }
+                    }
+                });
+                return parents;
+            }
         
-        fs.writeFileSync("output/parents.jsonl", JSON.stringify(parents));
+            function getAllInnerText(node, visitedNodes = new Set(), excludedTags = [], parents) {
+                let textContent = '';
+        
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    node.tagName.toLowerCase() !== 'script' &&
+                    node.tagName.toLowerCase() !== 'style') {
+        
+                    // Skip processing if the tag is in the exclusion list
+                    if (excludedTags.includes(node.tagName.toLowerCase())) {
+                        return '';
+                    }
+        
+                    // Prevent duplicate processing of the same element
+                    if (visitedNodes.has(node)) {
+                        return '';
+                    }
+                    visitedNodes.add(node);
+        
+                    if (node.shadowRoot) {
+                        textContent += getTextFromShadowRoot(node.shadowRoot, visitedNodes, excludedTags, parents);
+                    }
+        
+                    node.childNodes.forEach(childNode => {
+                        textContent += getAllInnerText(childNode, visitedNodes, excludedTags, parents);
+                    });
+                }
+        
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (node.textContent.trim()) {
+                        if (!parents[node.parentNode.tagName.toLowerCase()]) {
+                            parents[node.parentNode.tagName.toLowerCase()] = [];
+                        }
+                        parents[node.parentNode.tagName.toLowerCase()].push(node.textContent.trim());
+                        textContent += node.textContent.trim() + '\\n';
+                    }
+                }
+        
+                return parents;
+            }
+            
+            
+            let parents = {};
 
+            // Define which tags/components to exclude
+            const excludedTags = ['one-nav-bar-menu-item', 'a', 'one-global-header']; // Add more tags as needed
+        
+            return getAllInnerText(document.body, new Set(), excludedTags, parents);
+        `);
+
+
+        fs.writeFileSync("output/parents.jsonl", JSON.stringify(parents, null, 2));
+
+
+        const markdown = await driver.executeScript(`
+            function getTextFromShadowRoot(shadowRoot, visitedNodes, excludedTags) {
+                let markdown = '';
+                shadowRoot.childNodes.forEach(child => {
+                    if (child.nodeType === Node.TEXT_NODE) {
+                        if (child.textContent.trim()) {
+                            switch (child.parentNode.tagName.toLowerCase()) {
+                                case 'h1':
+                                    markdown += '\\n# ' + child.textContent.trim() + '\\n';
+                                    break;
+                                case 'h2':
+                                    markdown += '\\n## ' + child.textContent.trim() + '\\n';
+                                    break;
+                                case 'h3':
+                                    markdown += '\\n### ' + child.textContent.trim() + '\\n';
+                                    break;
+                                case 'p':
+                                    markdown += child.textContent.trim() + '\\n';
+                                    break;
+                                case 'a':
+                                    let href = child.parentNode.getAttribute('href');
+                                    markdown += '[' + child.textContent.trim() + '](' + href + ')';
+                                    break;
+                                case 'ul':
+                                    // Recursively handle list items
+                                    child.childNodes.forEach(child => parseNode(child));
+                                    break;
+                                case 'li':
+                                    markdown += '- ' + child.textContent.trim() + '\\n';
+                                    break;
+                                case 'strong':
+                                    markdown += '**' + child.textContent.trim() + '**';
+                                    break;
+                                case 'em':
+                                    markdown += '*' + child.textContent.trim() + '*';
+                                    break;
+                                case 'br':
+                                    markdown += '\\n';  // Line break in markdown
+                                    break;
+                                default:
+                                    markdown += child.textContent.trim() + ' ';
+                                    break;
+                            }
+        
+                        }
+                    } else if (child.nodeType === Node.ELEMENT_NODE) {
+                        // Recursively get text from shadow roots and elements
+                        if (child.tagName.toLowerCase() == 'br') {
+                            markdown += '\\n';  // Line break in markdown
+                        }
+                        if (child.shadowRoot) {
+                            markdown += getTextFromShadowRoot(child.shadowRoot, visitedNodes, excludedTags);
+                        } else {
+                            markdown += getAllInnerText(child, visitedNodes, excludedTags);
+                        }
+                    }
+                });
+                return markdown;
+            }
+        
+            function getAllInnerText(node, visitedNodes = new Set(), excludedTags = []) {
+                let markdown = '';
+        
+                if (node.nodeType === Node.ELEMENT_NODE &&
+                    node.tagName.toLowerCase() !== 'script' &&
+                    node.tagName.toLowerCase() !== 'style') {
+        
+                    // Skip processing if the tag is in the exclusion list
+                    if (excludedTags.includes(node.tagName.toLowerCase())) {
+                        return '';
+                    }
+        
+                    // Prevent duplicate processing of the same element
+                    if (visitedNodes.has(node)) {
+                        return '';
+                    }
+                    visitedNodes.add(node);
+        
+                    if (node.shadowRoot) {
+                        markdown += getTextFromShadowRoot(node.shadowRoot, visitedNodes, excludedTags);
+                    }
+                    
+                    if (node.tagName.toLowerCase() == 'br') {
+                        markdown += '\\n';  // Line break in markdown
+                    }
+    
+                    node.childNodes.forEach(childNode => {
+                        markdown += getAllInnerText(childNode, visitedNodes, excludedTags);
+                    });
+                }
+        
+                if (node.nodeType === Node.TEXT_NODE) {
+                    if (node.textContent.trim()) {
+                        switch (node.parentNode.tagName.toLowerCase()) {
+                            case 'h1':
+                                markdown += '\\n# ' + node.textContent.trim() + '\\n';
+                                break;
+                            case 'h2':
+                                markdown += '\\n## ' + node.textContent.trim() + '\\n';
+                                break;
+                            case 'h3':
+                                markdown += '\\n### ' + node.textContent.trim() + '\\n';
+                                break;
+                            case 'p':
+                                markdown += node.textContent.trim() + '\\n';
+                                break;
+                            case 'a':
+                                let href = node.parentNode.getAttribute('href');
+                                markdown += '[' + node.textContent.trim() + '](' + href + ')';
+                                break;
+                            case 'ul':
+                                // Recursively handle list items
+                                node.childNodes.forEach(child => parseNode(child));
+                                break;
+                            case 'li':
+                                markdown += '- ' + node.textContent.trim() + '\\n';
+                                break;
+                            case 'strong':
+                                markdown += '**' + node.textContent.trim() + '**';
+                                break;
+                            case 'em':
+                                markdown += '*' + node.textContent.trim() + '*';
+                                break;
+                            case 'br':
+                                markdown += '\\n';  // Line break in markdown
+                                break;
+                            default:
+                                markdown += node.textContent.trim() + ' ';
+                                break;
+                        }
+                    }
+                }
+        
+                return markdown;
+            }
+        
+            // Define which tags/components to exclude
+            const excludedTags = ['one-nav-bar-menu-item', 'a', 'one-global-header']; // Add more tags as needed
+        
+            return getAllInnerText(document.body, new Set(), excludedTags);
+        `);
+        
+
+        fs.writeFileSync("output/markdown.md", markdown);
+        fs.writeFileSync("output/markdown.jsonl", JSON.stringify(markdown, null, 2));
 
         if (!fs.existsSync("output/images")) {
             fs.mkdirSync("output/images", { recursive: true });
