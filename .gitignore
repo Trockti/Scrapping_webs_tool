@@ -16,6 +16,8 @@ RAG_TXT.txt
 # Ignora la carpeta de entorno virtual
 .venv
 
-# Ignora archivos de output
-output
+
+# Ignora el output
 URL
+JS/output/*
+!JS/output/.gitkeep
