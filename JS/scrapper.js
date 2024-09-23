@@ -76,14 +76,7 @@ async function downloadImage(url, Path) {
   
 
 rl.question("Please enter the URLs you want to extract data from: ", initialUrls => {
-    rl.question("Please enter the depth of the search: ", async wantedDepthStr => {
-        let wantedDepth;
-        try {
-            wantedDepth = parseInt(wantedDepthStr);
-        } catch (error) {
-            console.log("The value entered is not a valid number.");
-            wantedDepth = 1; // Default to 1 if invalid depth is provided
-        }
+
 
         const urlsList = initialUrls.split(" ");
         console.log(urlsList);
@@ -565,5 +558,5 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             await driver.quit();
             rl.close();
         })();
-    });
+
 });
