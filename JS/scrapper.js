@@ -100,57 +100,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         // Set of visited URLs to avoid loops
         const visitedUrls = new Set();
 
-        async function getFullHTMLIncludingShadowRoots(element) {
-            function getTextFromShadowRoot(shadowRoot) {
-                let text = '';
-
-                shadowRoot.childNodes.forEach(child => {
-                    if (child.nodeType === Node.TEXT_NODE) {
-                        if (child.textContent.trim()) {
-                            text += child.textContent.trim() + '\\n';
-                        }
-                    } else if (child.nodeType === Node.ELEMENT_NODE) {
-                        // Recursively get text from shadow roots and elements
-                        if (child.shadowRoot) {
-                            text += getTextFromShadowRoot(child.shadowRoot);
-                        }
-                        text += getAllInnerText(child);
-                    }
-                });
-
-                return text;
-            }
-
-            function getAllInnerText(node) {
-                let textContent = '';
-
-                // For element nodes, avoid <script> and <style> elements
-                if (node.nodeType === Node.ELEMENT_NODE &&
-                    node.tagName.toLowerCase() !== 'script' &&
-                    node.tagName.toLowerCase() !== 'style') {
-                    
-                    // If element has a shadow root, process it
-                    if (node.shadowRoot) {
-                        textContent += getTextFromShadowRoot(node.shadowRoot);
-                    }
-
-                    // Recursively process child nodes
-                    node.childNodes.forEach(childNode => {
-                        textContent += getAllInnerText(childNode);
-                    });
-                }
-
-                // For text nodes, directly add the text
-                if (node.nodeType === Node.TEXT_NODE) {
-                    if (node.textContent.trim()) textContent += node.textContent.trim() + '\\n';
-                }
-
-                return textContent;
-            }
-
-            // Start with the document root
-            return getAllInnerText(document.body);
-        }
+        
         
         
         async function exploreUrls(baseUrl, currentUrl, depth) {
@@ -164,7 +114,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             await driver.wait(until.elementLocated(By.tagName('body')), 10000);
         
 
-            let folder = currentUrl.replace(/[^a-zA-Z0-9]/g, '_')
+        let folder = currentUrl.replace(/[^a-zA-Z0-9]/g, '_')
 
         if (!fs.existsSync(folder)) {
             fs.mkdirSync(folder, { recursive: true });

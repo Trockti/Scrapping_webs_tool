@@ -22,3 +22,9 @@ JS/*/
 
 # Asegurar que la carpeta JS en sí misma sea rastreada
 !JS/
+
+# Ignorar todas las carpetas dentro de server-client
+server-client/*/
+
+# Asegurar que la carpeta server-client en sí misma sea rastreada
+!server-client/
