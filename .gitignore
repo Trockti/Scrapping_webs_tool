@@ -17,7 +17,8 @@ RAG_TXT.txt
 .venv
 
 
-# Ignora el output
-URL
-JS/output/*
-!JS/output/.gitkeep
+# Ignorar todas las carpetas dentro de JS
+JS/*/
+
+# Asegurar que la carpeta JS en sí misma sea rastreada
+!JS/

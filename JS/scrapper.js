@@ -5,6 +5,7 @@ const readline = require('readline');
 const path = require('path');
 const axios = require('axios');
 
+
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -81,9 +82,6 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         const urlsList = initialUrls.split(" ");
         console.log(urlsList);
 
-        // Clear the file content before starting
-        fs.writeFileSync("output/RAG_TXT.txt", "");
-        fs.writeFileSync("output/page_text.txt", "");
 
         // Setup Chrome options
         const chromeOptions = new chrome.Options()
@@ -164,17 +162,18 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             // Open the current URL
             await driver.get(currentUrl);
             await driver.wait(until.elementLocated(By.tagName('body')), 10000);
-
-        // Get the text content of all elements
-        const pageText = await driver.executeScript(`
-            return document.body.innerText;
-        `);
-
-
-        // Save the text to a file (optional)
-        fs.writeFileSync("output/page_text.txt", pageText);
         
 
+            let folder = currentUrl.replace(/[^a-zA-Z0-9]/g, '_')
+
+        if (!fs.existsSync(folder)) {
+            fs.mkdirSync(folder, { recursive: true });
+        }
+        else {
+            fs.rmdirSync(folder, { recursive: true });
+            fs.mkdirSync(folder, { recursive: true });
+        }
+        
         // Extract all visible text content from the DOM and shadow roots
         const extractedText = await driver.executeScript(`
             function getTextFromShadowRoot(shadowRoot, visitedNodes, excludedTags) {
@@ -241,13 +240,13 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
 
 
         // Optional: Save the text to a file
-        fs.writeFileSync("output/URL_text_all.txt", extractedText);
+        fs.writeFileSync(`${folder}/URL_text_all.txt`, extractedText);
 
         const page_data = {
             url: currentUrl,
             text: extractedText,
         }
-        fs.writeFileSync("output/page_data.jsonl", JSON.stringify(page_data, null, 2));
+        fs.writeFileSync(`${folder}/page_data.jsonl`, JSON.stringify(page_data, null, 2));
         
         const complete_html = await driver.executeScript(`
             // Function to extract the shadow DOM content recursively
@@ -284,7 +283,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         // Join the filtered lines back into a string
         const html = filteredLines.join('\n');
 
-        fs.writeFileSync("output/complete_html.html", html);
+        fs.writeFileSync(`${folder}/complete_html.html`, html);
 
 
       
@@ -292,7 +291,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             url: currentUrl,
             html: html,
             }
-        fs.writeFileSync("output/page_html.jsonl", JSON.stringify(page_html, null, 2));
+        fs.writeFileSync(`${folder}/page_html.jsonl`, JSON.stringify(page_html, null, 2));
         
 
         const parents = await driver.executeScript(`
@@ -369,7 +368,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         `);
 
 
-        fs.writeFileSync("output/parents.jsonl", JSON.stringify(parents, null, 2));
+        fs.writeFileSync(`${folder}/parents.jsonl`, JSON.stringify(parents, null, 2));
 
 
         const markdown = await driver.executeScript(`
@@ -515,18 +514,22 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         `);
         
 
-        fs.writeFileSync("output/markdown.md", markdown);
+        fs.writeFileSync(`${folder}/markdown.md`, markdown);
 
         const markdown_josnl = {
             url: currentUrl,
             markdown: markdown,
         }
 
-        fs.writeFileSync("output/markdown.jsonl", JSON.stringify(markdown_josnl, null, 2));
+        fs.writeFileSync(`${folder}/markdown.jsonl`, JSON.stringify(markdown_josnl, null, 2));
 
-        if (!fs.existsSync("output/images")) {
-            fs.mkdirSync("output/images", { recursive: true });
+        if (!fs.existsSync(`${folder}/images`)) {
+            fs.mkdirSync(`${folder}/images`, { recursive: true });
           }
+        else {
+            fs.rmdirSync(`${folder}/images`, { recursive: true });
+            fs.mkdirSync(`${folder}/images`, { recursive: true });
+        }
         
         const images = extractImagesfromURL(await driver.getPageSource());
 
@@ -541,7 +544,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             console.log("Downloading extension:", imageUrl.split('.').pop());  
             let extension = imageUrl.split('.').pop() == 'svg' ? imageUrl.split('.').pop(): 'png';
             let image = new URL(imageUrl, currentUrl).toString();
-            await downloadImage(image, `output/images/${index}.${extension}`);
+            await downloadImage(image, `${folder}/images/${index}.${extension}`);
         }));
 
     }
