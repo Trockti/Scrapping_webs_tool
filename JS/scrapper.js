@@ -155,10 +155,8 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         }
         
         
-        async function exploreUrls(baseUrl, currentUrl, depth, wantedDepth) {
-            if (depth >= wantedDepth || visitedUrls.has(currentUrl)) {
-                return;
-            }
+        async function exploreUrls(baseUrl, currentUrl, depth) {
+
 
             visitedUrls.add(currentUrl);
             depth += 1;
@@ -518,7 +516,13 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
         
 
         fs.writeFileSync("output/markdown.md", markdown);
-        fs.writeFileSync("output/markdown.jsonl", JSON.stringify(markdown, null, 2));
+
+        const markdown_josnl = {
+            url: currentUrl,
+            markdown: markdown,
+        }
+
+        fs.writeFileSync("output/markdown.jsonl", JSON.stringify(markdown_josnl, null, 2));
 
         if (!fs.existsSync("output/images")) {
             fs.mkdirSync("output/images", { recursive: true });
@@ -546,7 +550,7 @@ rl.question("Please enter the URLs you want to extract data from: ", initialUrls
             for (const startUrl of urlsList) {
                 let depth = -1;
                 // Start exploration from the initial URL
-                await exploreUrls(startUrl, startUrl, depth, wantedDepth);
+                await exploreUrls(startUrl, startUrl, depth);
             }
 
             // Print all visited URLs
