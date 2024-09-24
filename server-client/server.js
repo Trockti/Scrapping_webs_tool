@@ -21,6 +21,18 @@ let shouldPause = false;
 let shouldStop = false;
 let depth_allowed = true;
 
+// Filtrar el texto no deseado
+const unwantedTextPatterns = [
+    /Cookie-Einwilligung[\s\S]*?Akzeptieren/g,
+    /Ich bin mindestens 16 Jahre alt und einverstanden, dass[\s\S]*?Cookies/g,
+    /WhatsApp SIM[\s\S]*?Partner/g,
+    /Datenschutzerklärung/g,
+    /Impressum/g,
+    /Einstellungen/g,
+    /Verweigern/g,
+    /Akzeptieren/g
+];
+
 app.use(express.json()); // For parsing application/json
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
@@ -237,7 +249,7 @@ async function scrapper(urls, wantedDepth, socket) {
         fs.mkdirSync("output");
     }
     else {
-        fs.rmdirSync("output", { recursive: true });
+        fs.rmSync("output", { recursive: true });
         fs.mkdirSync("output");
     }
 
@@ -295,7 +307,7 @@ async function scrapper(urls, wantedDepth, socket) {
                     fs.mkdirSync(`output/${folder}`, { recursive: true });
                 }
                 else {
-                    fs.rmdirSync(`output/${folder}`, { recursive: true });
+                    fs.rmSync(`output/${folder}`, { recursive: true });
                     fs.mkdirSync(`output/${folder}`, { recursive: true });
                 }
 
@@ -363,13 +375,17 @@ async function scrapper(urls, wantedDepth, socket) {
                     return getAllInnerText(document.body, new Set(), excludedTags);
                 `);
     
-    
+                let filteredText = extractedText;
+                unwantedTextPatterns.forEach(pattern => {
+                    filteredText = filteredText.replace(pattern, '');
+                });
+
                 // Optional: Save the text to a file
-                fs.writeFileSync(`output/${folder}/URL_text_all.txt`, extractedText);
+                fs.writeFileSync(`output/${folder}/URL_text_all.txt`, filteredText);
     
                 const page_data = {
                     url: currentUrl,
-                    text: extractedText,
+                    text: filteredText,
                 }
                 fs.writeFileSync(`output/${folder}/page_data.jsonl`, JSON.stringify(page_data, null, 2));
                 
@@ -647,7 +663,17 @@ async function scrapper(urls, wantedDepth, socket) {
                 }
     
                 fs.writeFileSync(`output/${folder}/markdown.jsonl`, JSON.stringify(markdown_josnl, null, 2));
-    
+                
+                const final_document = {
+                    url: currentUrl,
+                    markdown: markdown,
+                    text: filteredText,
+                    html: html,
+                    parents: parents
+                }
+
+                fs.writeFileSync(`output/${folder}/final_document.jsonl`, JSON.stringify(final_document, null, 2));
+
                 if (!fs.existsSync(`output/${folder}/images`)) {
                     fs.mkdirSync(`output/${folder}/images`, { recursive: true });
                 }
@@ -672,16 +698,13 @@ async function scrapper(urls, wantedDepth, socket) {
                     await downloadImage(image, `output/${folder}/images/${index}.${extension}`);
                 }));
     
-        }
+            }
         }
         if (depth_allowed){
             if (depth >= wantedDepth) {
                 return;
             }
         }   
-
-        await driver.get(currentUrl);
-        await driver.wait(until.elementLocated(By.tagName('body')), 10000);
 
 
 
