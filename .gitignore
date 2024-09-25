@@ -28,3 +28,6 @@ server-client/*/
 
 # Asegurar que la carpeta server-client en sí misma sea rastreada
 !server-client/
+
+# Ignorar carpeta con resultado final
+data.jsonl

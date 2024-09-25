@@ -33,6 +33,14 @@ const unwantedTextPatterns = [
     /Akzeptieren/g
 ];
 
+const jsonlStream = fs.createWriteStream('data.jsonl', { flags: 'a' });  // 'a' means append to the file
+
+function writeToJsonlFile(jsonObject) {
+    const jsonString = JSON.stringify(jsonObject);
+    jsonlStream.write(jsonString + '\n');  // Write the JSON object followed by a newline
+}
+
+
 app.use(express.json()); // For parsing application/json
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
@@ -674,6 +682,8 @@ async function scrapper(urls, wantedDepth, socket) {
 
                 fs.writeFileSync(`output/${folder}/final_document.jsonl`, JSON.stringify(final_document, null, 2));
 
+                writeToJsonlFile(final_document);
+
                 if (!fs.existsSync(`output/${folder}/images`)) {
                     fs.mkdirSync(`output/${folder}/images`, { recursive: true });
                 }
@@ -698,13 +708,16 @@ async function scrapper(urls, wantedDepth, socket) {
                     await downloadImage(image, `output/${folder}/images/${index}.${extension}`);
                 }));
     
-            }
+        }
         }
         if (depth_allowed){
             if (depth >= wantedDepth) {
                 return;
             }
         }   
+
+        await driver.get(currentUrl);
+        await driver.wait(until.elementLocated(By.tagName('body')), 10000);
 
 
 
