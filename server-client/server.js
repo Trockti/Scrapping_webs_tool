@@ -319,6 +319,9 @@ async function scrapper(urls, wantedDepth, socket) {
                     fs.mkdirSync(`output/${folder}`, { recursive: true });
                 }
 
+                await driver.get(currentUrl);
+                await driver.wait(until.elementLocated(By.tagName('body')), 10000);
+                
                 // Extract all visible text content from the DOM and shadow roots
                 const extractedText = await driver.executeScript(`
                     function getTextFromShadowRoot(shadowRoot, visitedNodes, excludedTags) {
@@ -671,7 +674,8 @@ async function scrapper(urls, wantedDepth, socket) {
                 }
     
                 fs.writeFileSync(`output/${folder}/markdown.jsonl`, JSON.stringify(markdown_josnl, null, 2));
-                
+                console.log('Markdown:', markdown);
+                console.log('currentUrl:', currentUrl);
                 const final_document = {
                     url: currentUrl,
                     markdown: markdown,
@@ -716,8 +720,7 @@ async function scrapper(urls, wantedDepth, socket) {
             }
         }   
 
-        await driver.get(currentUrl);
-        await driver.wait(until.elementLocated(By.tagName('body')), 10000);
+
 
 
 
